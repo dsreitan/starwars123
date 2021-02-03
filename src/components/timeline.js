@@ -1,15 +1,11 @@
-import "../styles/timeline.css"
 import React from "react"
+import TimelineItem from "./timelineItem"
+import "../styles/timeline.css"
 
 const Timeline = ({ timelineItems }) => (
   <div className="timeline">
-    {timelineItems.map(x =>
-      <div className={"container " + x.pos}>
-        <div className="content">
-          <h2>{x.name}</h2>
-          <p>{x.description}</p>
-        </div>
-      </div>
+    {timelineItems && timelineItems.map(x =>
+      <TimelineItem key={x.id} timelineItem={x} />
     )}
   </div>
 )
