@@ -1,33 +1,41 @@
-const elastic = require("./data/registerElastic")
+const { INDEX_NAME, client } = require("./services/elastic-search")
 
 const query = {
-    index: elastic.INDEX_NAME,
+    index: INDEX_NAME,
     body: {
         size: 1000,
-        query: {
-            bool: {
-                "must": [
-                    { "match": { "parentId": "tt0458290" } },
-                ],
-            },
-        },
+        // query: {
+        //     bool: {
+        //         "must": [
+        //             { "match": { "parentId": "tt0458290" } },
+        //         ],
+        //     },
+        // },
         sort: {
             releasedOn: { order: "asc" },
         },
-    },
+        aggs: {
+            totalLengthInMinutes: {
+                sum: {
+                    field: "lengthInMinutes",
+                },
+            },
+        },
+    }
 };
 
 // https://www.joshwcomeau.com/gatsby/using-netlify-functions-with-gatsby/
 exports.handler = async (event) => {
     try {
-        const searchResult = await elastic.client.search(query);
-        console.log(`Hits total: ${searchResult.body.hits.total.value}`);
+        const searchResult = await client.search(query);
+        console.log(`${searchResult.body.hits.total.value} hits`);
 
         const hits = searchResult.body.hits.hits;
+        const aggs = searchResult.body.aggregations;
 
         return {
             statusCode: 200,
-            body: JSON.stringify(hits, null, 2),
+            body: JSON.stringify({ aggs, hits }, null, 2),
         };
 
     } catch (error) {

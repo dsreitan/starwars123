@@ -1,5 +1,5 @@
 const fetch = require('node-fetch')
-const elastic = require("./data/registerElastic")
+const elastic = require("./services/elastic-search")
 
 // https://www.joshwcomeau.com/gatsby/using-netlify-functions-with-gatsby/
 exports.handler = async (event) => {
