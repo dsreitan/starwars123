@@ -1,27 +1,23 @@
 import { useState, useEffect } from 'react';
 
-export const useSearch = (id) => {
-    const [imdbData, setImdbData] = useState(null);
+export const useSearch = () => {
+    const [searchData, setSearchData] = useState(null);
 
-    if (imdbData === null) {
-        fetchImdbData(id, 1).then(x => {
-            console.debug("imdb data", x)
-            setImdbData(x)
+    if (searchData === null) {
+        search().then(x => {
+            console.debug("search data", x)
+            setSearchData(x)
         })
     }
 
     useEffect(() => { })
 
-    return imdbData;
+    return searchData;
 }
 
-const fetchImdbData = async (id) => {
-    var cachedData = sessionStorage[id];
-    if (cachedData) return { isCached: true, ...JSON.parse(cachedData) };
 
+const search = async () => {
     var response = await fetch(`/.netlify/functions/search`)
     var json = await response.json();
-
-    sessionStorage[id] = JSON.stringify(json);
     return json;
 }

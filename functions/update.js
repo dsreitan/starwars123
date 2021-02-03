@@ -1,5 +1,5 @@
-const fetch = require('node-fetch')
-const elastic = require("./services/elastic-search")
+const { index } = require("./services/elastic-search")
+const { fetchOmdbData } = require("./services/omdb")
 
 // https://www.joshwcomeau.com/gatsby/using-netlify-functions-with-gatsby/
 exports.handler = async (event) => {
@@ -38,24 +38,27 @@ exports.handler = async (event) => {
 
     for (let item of dataSources) {
         if (item.imdbID) {
-            const omdbResult = await fetchImdbData(item.id)
+            const omdbResult = await fetchOmdbData(item.id)
             item = { ...item, ...omdbResult }
         }
 
-        await indexDocument(item.id, item)
+        await index(item.id, item)
 
+        // fetch each episode in a series
         if (item.totalSeasons && event.queryStringParameters.episodes) {
             const lastSeason = parseInt(item.totalSeasons)
             for (let currentSeason = 1; currentSeason <= lastSeason; currentSeason++) {
-                const omdbResult = await fetchImdbData(item.id, currentSeason)
+                const omdbSeasonResult = await fetchOmdbData(item.id, currentSeason)
 
-                for (let episode of omdbResult.Episodes) {
+                for (let episode of omdbSeasonResult.Episodes.slice(0, 2)) {
 
                     episode.id = episode.imdbID;
                     episode.parentId = item.id;
 
+                    const episodeOmdbResult = await fetchOmdbData(episode.imdbID)
+
                     //TODO: fetch imdb ep
-                    await indexDocument(episode.id, episode)
+                    await index(episode.id, { ...episode, ...episodeOmdbResult })
                 }
             }
         }
@@ -69,50 +72,7 @@ exports.handler = async (event) => {
     };
 };
 
-const indexDocument = async (id, body) => {
-    try {
-        await elastic.client.index({
-            index: elastic.INDEX_NAME,
-            id,
-            body,
-        });
-    } catch (error) {
-        console.log("indexing failed", id, error);
-    }
-}
 
-const fetchImdbData = async (id, season) => {
-    try {
-        if (!process.env.OMDB_API_KEY) {
-            console.error("process.env.OMDB_API_KEY not set")
-        }
-
-        let url = `https://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${id}`;
-        if (season) {
-            url = `${url}&Season=${season}`
-        }
-
-        var response = await fetch(url)
-
-        var json = await response.json();
-
-        json = parseFields(json);
-
-        console.log("fetched from omdb", id, season, json.Response)
-
-        return json;
-    } catch (error) {
-        console.log("fetched failed", id, error);
-    }
-}
-
-const parseFields = (json) => {
-    return {
-        releasedOn: new Date(json.Released),
-        lengthInMinutes: parseInt(`${json.Runtime}`),
-        ...json
-    };
-}
 
 
     // // Query params
