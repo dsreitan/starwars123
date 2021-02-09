@@ -50,7 +50,7 @@ exports.handler = async (event) => {
             for (let currentSeason = 1; currentSeason <= lastSeason; currentSeason++) {
                 const omdbSeasonResult = await fetchOmdbData(item.id, currentSeason)
 
-                for (let episode of omdbSeasonResult.Episodes.slice(0, 2)) {
+                for (let episode of omdbSeasonResult.Episodes.slice(0, 1)) {
 
                     episode.id = episode.imdbID;
                     episode.parentId = item.id;

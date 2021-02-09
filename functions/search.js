@@ -1,14 +1,44 @@
 const { search } = require("./services/elastic-search")
 
-var searchBody = {
+var getSearchBodyWithQuery = ({ q, type }) => {
+
+    let query = {
+        bool: null
+    };
+
+    if (type) {
+        const types = type.split(",")
+        query.bool = {
+            ...query.bool,
+            "filter": [{
+                "terms": {
+                    "Type": types
+                }
+            }]
+        }
+    }
+
+    if (q && q !== "undefined") {
+        query.bool = {
+            ...query.bool,
+            "must": {
+                "simple_query_string": {
+                    "query": q,
+                    "fields": ["Title^5", "Actors", "Director"],
+                },
+            },
+        }
+    }
+
+    if (query.bool) {
+        searchBody.query = query;
+    }
+
+    return searchBody;
+}
+
+let searchBody = {
     size: 1000,
-    // query: {
-    //     bool: {
-    //         "must": [
-    //             { "match": { "parentId": "tt0458290" } },
-    //         ],
-    //     },
-    // },
     sort: {
         boxOfficeInDollars: { order: "desc" },
     },
@@ -27,9 +57,7 @@ var searchBody = {
 }
 
 // https://www.joshwcomeau.com/gatsby/using-netlify-functions-with-gatsby/
-exports.handler = async (event) => {
-
-    const searchResult = await search(searchBody);
-
-    return searchResult;
+exports.handler = async ({ queryStringParameters }) => {
+    console.log("query params", queryStringParameters)
+    return await search(getSearchBodyWithQuery(queryStringParameters));
 };

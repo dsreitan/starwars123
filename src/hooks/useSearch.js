@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 
-export const useSearch = () => {
+export const useSearch = (query) => {
     const [searchData, setSearchData] = useState(null);
 
     if (searchData === null) {
-        search().then(x => {
-            console.debug("search data", x)
+        console.debug("query", query)
+        search(query).then(x => {
+            console.debug("results", query, x)
             setSearchData(x)
         })
     }
@@ -16,8 +17,8 @@ export const useSearch = () => {
 }
 
 
-const search = async () => {
-    var response = await fetch(`/.netlify/functions/search`)
+const search = async (query) => {
+    var response = await fetch(`/.netlify/functions/search?${new URLSearchParams(query)}`)
     var json = await response.json();
     return json;
 }
